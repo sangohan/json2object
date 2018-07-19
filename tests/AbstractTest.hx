@@ -287,4 +287,14 @@ class AbstractTest
 		parser.fromJson("{}", "");
 		Assert.isTrue(true); // Just check that it compiles
 	}
+
+	public function test12 ()
+	{
+		var parser = new json2object.JsonParser<OtherAbstract>();
+		var data = parser.fromJson('{"hello":"world"}', "");
+		Assert.same(data.hello, "world");
+
+		//var writer = new json2object.JsonWriter<OtherAbstract>();
+		//Assert.same(data, parser.fromJson(writer.write(data), ""));
+	}
 }

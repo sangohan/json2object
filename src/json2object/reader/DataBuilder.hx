@@ -146,7 +146,6 @@ class DataBuilder {
 	public static function makeObjectOrAnonParser(parser:TypeDefinition, type:Type, baseParser:BaseType) {
 		var cls = {name:baseParser.name, pack:baseParser.pack, params:[TPType(type.toComplexType())]};
 
-
 		var initializator:Expr;
 		var isAnon = false;
 		var fields:Array<ClassField>;
@@ -162,6 +161,11 @@ class DataBuilder {
 				params = [];
 
 			case TInst(_.get()=>t, p):
+				if (t.isPrivate)
+				{
+					t = TypeUtils.copyType(t);
+				}
+
 				fields = [];
 				var s = t;
 				while (s != null)
@@ -517,8 +521,6 @@ class DataBuilder {
 				if (caseValues.length == 0 && !isNullable(type)) {
 					Context.fatalError("json2object: Abstract enum of type "+ type.toString() +"can't be parsed if empty", Context.currentPos());
 				}
-
-
 
 				var v = switch (name) {
 					case "String": macro s;

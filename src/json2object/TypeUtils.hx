@@ -92,9 +92,11 @@ class TypeUtils
 		if (!exist.exists(t.name))
 		{
 			var td : TypeDefinition = {
+				#if (haxe_ver >= 4)
+				doc: t.doc,
+				#end
 				pack: t.pack,
 				name: t.name,
-				doc: t.doc,
 				pos: t.pos,
 				meta: t.meta.get(),
 				params: [for (p in t.params) { name: p.name }],

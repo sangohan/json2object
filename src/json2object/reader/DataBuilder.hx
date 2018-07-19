@@ -143,11 +143,12 @@ class DataBuilder {
 		changeFunction("loadJsonNull", parser, macro {value = null;});
 	}
 
-	public static function makeObjectOrAnonParser(parser:TypeDefinition, type:Type, baseParser:BaseType) {
+	public static function makeObjectOrAnonParser(parser:TypeDefinition, type:Type, superType:Type, baseParser:BaseType) {
 		var cls = {name:baseParser.name, pack:baseParser.pack, params:[TPType(type.toComplexType())]};
 
 		var initializator:Expr;
 		var isAnon = false;
+		var isPrivate = null;
 		var fields:Array<ClassField>;
 
 		var tParams:Array<TypeParameter>;
@@ -164,6 +165,7 @@ class DataBuilder {
 				if (t.isPrivate)
 				{
 					t = TypeUtils.copyType(t);
+					isPrivate = t;
 				}
 
 				fields = [];
@@ -284,12 +286,24 @@ class DataBuilder {
 			changeFunction("getAuto", parser, macro return $initializator);
 		}
 		else {
+			var casting =
+				if (isPrivate != null && Context.defined("cpp") && !Context.defined("cppia"))
+				{
+					// hxcpp can't directly use the cast
+					var abstractType = superType.toComplexType();
+					macro cast ((cpp.Pointer.addressOf(value).reinterpret() : cpp.Pointer<$abstractType>).value);
+				}
+				else
+				{
+					macro cast value;
+				}
+
 			var autoExpr = macro {
 				var value = $initializator;
 				@:privateAccess {
 					$b{autoExprs};
 				}
-				return cast value;
+				return $casting;
 			}
 			changeFunction("getAuto", parser, macro return $autoExpr);
 		}
@@ -623,7 +637,7 @@ class DataBuilder {
 							}
 							else {
 								if (i == 0) {
-									makeObjectOrAnonParser(parser,fromType.t.followWithAbstracts(), baseParser);
+									makeObjectOrAnonParser(parser, fromType.t.followWithAbstracts(), type, baseParser);
 									hasOneFrom = true;
 								}
 							}
@@ -694,7 +708,7 @@ class DataBuilder {
 							}
 						case TAnonymous(_.get()=>st):
 							if (i == 0) {
-								makeObjectOrAnonParser(parser,fromType.t.followWithAbstracts(), baseParser);
+								makeObjectOrAnonParser(parser, fromType.t.followWithAbstracts(), type, baseParser);
 								hasOneFrom = true;
 							}
 						default:
@@ -843,10 +857,10 @@ class DataBuilder {
 
 							default:
 						}
-						makeObjectOrAnonParser(parser, type, c);
+						makeObjectOrAnonParser(parser, type, null, c);
 				}
 			case TAnonymous(_.get()=>t):
-				makeObjectOrAnonParser(parser, type, c);
+				makeObjectOrAnonParser(parser, type, null, c);
 			case TAbstract(_.get()=>t, p):
 				if (t.name == "Null") {
 					return makeParser(c, p[0], type);
